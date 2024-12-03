@@ -34,16 +34,28 @@ def abstractive_summary(text, model_name="facebook/bart-large-cnn", max_length=1
 # print(summary)
 
 import time
+from multiprocessing import Pool
 
-start = time.time()
-i = 0
-try:
-    with open("wiki_articles.txt", 'r') as input_file, open("simplified.txt", 'w') as output_file:
-        for line in input_file:
-            output_file.write(abstractive_summary(line)+'\n')
-            i += 1
-except:
-    print("Error Occured")
-finally:
+def get_summary(text):
+    print("Summary started!")
+    summary = abstractive_summary(text) + '\n'
+    print("Summary complete!")
+    return summary
+
+def process_file(num_workers = 4):
+    with open("wiki_articles.txt", "r") as input_file:
+        lines = input_file.readlines()
+    
+    with Pool(num_workers) as pool:
+        summaries = pool.map(get_summary, lines)    
+    
+    with open("simplified.txt", "w") as output_file:
+        [output_file.write(summary) for summary in summaries]
+
+    return len(lines)
+
+if __name__ == "__main__":
+    start = time.time()
+    articles_count = process_file(3)
     end = time.time()
-    print(f"Time elapsed: {end-start}\nArticles Processed: {i}")
+    print(f"Time elapsed: {end-start}\nArticles Processed: {articles_count}")
